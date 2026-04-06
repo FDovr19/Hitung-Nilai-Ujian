@@ -28,7 +28,7 @@ with st.container(border=True):
 # --- SIDEBAR & INFO PENGEMBANG (OPSI 3) ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
-    mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL[:5])
+    mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
     kkm = st.number_input("Batas Lulus (KKM)", value=75)
     
     st.divider()
