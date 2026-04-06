@@ -32,6 +32,7 @@ with st.sidebar:
         "Pilih yang akan dinilai:",
         options=BANK_MAPEL,
         default=BANK_MAPEL
+    )
     
     kkm = st.number_input("Batas Kelulusan (KKM)", value=75)
 
