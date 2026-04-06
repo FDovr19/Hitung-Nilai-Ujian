@@ -31,8 +31,7 @@ with st.sidebar:
     mapel_terpilih = st.multiselect(
         "Pilih yang akan dinilai:",
         options=BANK_MAPEL,
-        default=["Bahasa Indonesia", "Matematika", "IPAS (IPA & IPS)", "Seni Budaya"]
-    )
+        default=BANK_MAPEL
     
     kkm = st.number_input("Batas Kelulusan (KKM)", value=75)
 
