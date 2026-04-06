@@ -23,7 +23,7 @@ with st.container(border=True):
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
-    mapel_terpilih = st.multiselect("Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL[:6])
+    mapel_terpilih = st.multiselect("Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
     kkm = st.number_input("KKM", value=75)
     st.divider()
     if st.button("🗑️ Reset Semua Data"):
