@@ -21,7 +21,7 @@ st.write("Input nilai siswa satu per satu, lalu unduh rekapitulasi seluruh kelas
 # --- SIDEBAR: PENGATURAN GLOBAL ---
 with st.sidebar:
     st.header("⚙️ Pengaturan Ujian")
-    mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL[:4])
+    mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
     kkm = st.number_input("Batas Lulus (KKM)", value=75)
     
     st.divider()
