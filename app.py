@@ -15,17 +15,17 @@ BANK_MAPEL = [
 if 'database_nilai' not in st.session_state:
     st.session_state.database_nilai = []
 
-# --- HEADER & KREDIT (OPSI 2) ---
+# --- HEADER & KREDIT ---
 st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.0 2026*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.1 2026*")
 st.write("---")
 
-# --- DATA SEKOLAH (Default ke SDN Duwet 2 Wates Kediri) ---
+# --- DATA SEKOLAH ---
 with st.container(border=True):
     st.subheader("🏫 Informasi Satuan Pendidikan")
     nama_sekolah = st.text_input("Nama Sekolah", value="SDN Duwet 2 Wates Kediri", key="input_sekolah")
 
-# --- SIDEBAR & INFO PENGEMBANG (OPSI 3) ---
+# --- SIDEBAR & INFO PENGEMBANG ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
@@ -39,7 +39,6 @@ with st.sidebar:
     
     st.divider()
     
-    # Tombol Info Pengembang
     if st.button("ℹ️ Tentang Pengembang"):
         st.dialog("Profil Pengembang")
         st.markdown(f"""
@@ -70,27 +69,33 @@ with st.container(border=True):
         for m in mapel_terpilih:
             with st.expander(f"📖 {m}", expanded=False):
                 col_pg, col_is, col_es = st.columns(3)
+                
                 with col_pg:
                     st.markdown("**PG**")
                     jml_pg = st.number_input(f"Total PG - {m}", min_value=1, value=25, key=f"tpg_{m}")
                     ben_pg = st.number_input(f"Benar PG - {m}", min_value=0, max_value=jml_pg, key=f"bpg_{m}")
-                    bot_pg = st.number_input(f"Bobot PG - {m}", value=1, key=f"opg_{m}")
+                    bot_pg = st.number_input(f"Poin/PG - {m}", value=1, key=f"opg_{m}")
+                
                 with col_is:
                     st.markdown("**Isian**")
                     jml_is = st.number_input(f"Total Isian - {m}", min_value=0, value=10, key=f"tis_{m}")
                     ben_is = st.number_input(f"Benar Isian - {m}", min_value=0, max_value=jml_is, key=f"bis_{m}")
-                    bot_is = st.number_input(f"Bobot Isian - {m}", value=2, key=f"ois_{m}")
+                    bot_is = st.number_input(f"Poin/Isian - {m}", value=2, key=f"ois_{m}")
+                
                 with col_es:
                     st.markdown("**Essay**")
                     jml_es = st.number_input(f"Total Essay - {m}", min_value=0, value=5, key=f"tes_{m}")
-                    skor_es = st.number_input(f"Skor Essay - {m}", min_value=0, key=f"bes_{m}")
-                    bot_es = st.number_input(f"Bobot Max - {m}", value=3, key=f"oes_{m}")
+                    ben_es = st.number_input(f"Jml Benar Essay - {m}", min_value=0, max_value=jml_es, key=f"bes_{m}")
+                    bot_es = st.number_input(f"Poin/Essay - {m}", value=4, key=f"oes_{m}")
                 
-                # Kalkulasi
+                # --- UPDATE RUMUS POIN PER BUTIR ---
                 s_max = (jml_pg * bot_pg) + (jml_is * bot_is) + (jml_es * bot_es)
-                s_per = (ben_pg * bot_pg) + (ben_is * bot_is) + (skor_es)
+                s_per = (ben_pg * bot_pg) + (ben_is * bot_is) + (ben_es * bot_es)
+                
                 nilai_akhir = (s_per / s_max) * 100 if s_max > 0 else 0
                 nilai_temp[m] = round(nilai_akhir, 2)
+                
+                st.caption(f"Skor: {s_per}/{s_max} | Nilai: **{nilai_temp[m]}**")
 
         if st.button("➕ Simpan & Analisis Radar", type="primary"):
             if not nama_input:
@@ -110,7 +115,7 @@ if st.session_state.database_nilai:
     col_chart, col_stat = st.columns([2, 1])
     with col_chart:
         st.subheader(f"📊 Radar Kekuatan: {last_siswa['Nama']}")
-        categories = list(nilai_temp.keys())
+        categories = list(mapel_terpilih)
         values = [last_siswa[m] for m in categories]
         fig = go.Figure()
         fig.add_trace(go.Scatterpolar(r=values + [values[0]], theta=categories + [categories[0]], fill='toself', line_color='teal'))
