@@ -98,7 +98,7 @@ with st.container(border=True):
                 st.session_state.database_nilai.append(data_siswa)
                 st.success(f"Data {nama_input} Berhasil Disimpan!")
 
-# --- VISUALISASI RADAR & ANALISIS OTOMATIS ---
+            # --- VISUALISASI RADAR & ANALISIS OTOMATIS ---
 if st.session_state.database_nilai:
     st.divider()
     df_rekap = pd.DataFrame(st.session_state.database_nilai)
@@ -108,95 +108,69 @@ if st.session_state.database_nilai:
     
     with col_chart:
         st.subheader(f"📊 Radar Kompetensi: {last_siswa['Nama']}")
-        categories = list(mapel_terpilih)
+        # Filter hanya mapel yang ada nilainya di data siswa terakhir
+        categories = [m for m in mapel_terpilih if m in last_siswa]
         values = [last_siswa[m] for m in categories]
         
-        fig = go.Figure()
+        if categories:
+            fig = go.Figure()
 
-        # 1. Area Nilai Siswa
-        fig.add_trace(go.Scatterpolar(
-            r=values + [values[0]],
-            theta=categories + [categories[0]],
-            fill='toself',
-            name=last_siswa['Nama'],
-            line=dict(color='#1f77b4', width=3),
-            marker=dict(size=8)
-        ))
-
-        # 2. Garis KKM (Batas Lulus)
-        fig.add_trace(go.Scatterpolar(
-            r=[kkm]*len(categories) + [kkm],
-            theta=categories + [categories[0]],
-            mode='lines',
-            name='Batas KKM',
-            line=dict(color='red', width=2, dash='dash')
-        ))
-
-        # 3. Garis Rata-rata Kelas (Hanya muncul jika siswa > 1)
-        if len(st.session_state.database_nilai) > 1:
-            rata_kelas = [df_rekap[m].mean() for m in categories]
+            # 1. Area Nilai Siswa
             fig.add_trace(go.Scatterpolar(
-                r=rata_kelas + [rata_kelas[0]],
+                r=values + [values[0]],
                 theta=categories + [categories[0]],
-                mode='lines',
-                name='Rata-rata Kelas',
-                line=dict(color='rgba(0, 128, 0, 0.5)', width=2)
+                fill='toself',
+                name=last_siswa['Nama'],
+                line=dict(color='#1f77b4', width=3),
+                marker=dict(size=8)
             ))
 
-        fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5),
-            height=450
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            # 2. Garis KKM
+            fig.add_trace(go.Scatterpolar(
+                r=[kkm]*len(categories) + [kkm],
+                theta=categories + [categories[0]],
+                mode='lines',
+                name='Batas KKM',
+                line=dict(color='red', width=2, dash='dash')
+            ))
+
+            fig.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5),
+                height=450
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
     with col_stat:
         st.subheader("📈 Auto-Insight")
         st.metric("Rata-rata Individu", f"{last_siswa['Rata-rata']}")
         
-        # Logika Deteksi Otomatis
-        mapel_values = {m: last_siswa[m] for m in mapel_terpilih}
-        top_mapel = max(mapel_values, key=mapel_values.get)
-        low_mapel = min(mapel_values, key=mapel_values.get)
-        
-        st.markdown(f"🌟 **Kekuatan Utama:**\nSiswa sangat menonjol di mata pelajaran **{top_mapel}**.")
-        
-        if mapel_values[low_mapel] < kkm:
-            st.error(f"⚠️ **Perhatian Khusus:**\nNilai **{low_mapel}** ({mapel_values[low_mapel]}) masih di bawah KKM. Disarankan program remedial.")
-        else:
-            st.warning(f"📘 **Saran Pengembangan:**\nNilai terendah ada di **{low_mapel}**. Bisa ditingkatkan lagi agar seimbang.")
+        # Ambil nilai mapel saja untuk analisis
+        mapel_values = {m: last_siswa[m] for m in categories}
+        if mapel_values:
+            top_mapel = max(mapel_values, key=mapel_values.get)
+            low_mapel = min(mapel_values, key=mapel_values.get)
             
-        if last_siswa['Rata-rata'] > (df_rekap['Rata-rata'].mean()):
-            st.info("✅ Siswa berada di atas rata-rata kelas.")
+            st.success(f"🌟 **Kekuatan Utama:**\n{top_mapel} ({mapel_values[top_mapel]})")
+            
+            if mapel_values[low_mapel] < kkm:
+                st.error(f"⚠️ **Perlu Remedial:**\n{low_mapel} ({mapel_values[low_mapel]})")
+            else:
+                st.warning(f"📘 **Saran:**\nTingkatkan {low_mapel} ({mapel_values[low_mapel]})")
 
-    # --- TABEL REKAP DENGAN COLOR CODING (VERSI FIX) ---
+    # --- TABEL REKAP (VERSI PALING AMAN) ---
     st.write("---")
     st.subheader("📋 Rekapitulasi Kolektif")
     
-    # Fungsi warna yang lebih aman (Hanya untuk angka)
-    def style_kkm(val):
-        try:
-            if isinstance(val, (int, float, np.integer, np.floating)):
-                return 'color: red' if val < kkm else 'color: black'
-        except:
-            pass
-        return ''
-
-    # Pastikan hanya mewarnai kolom Mata Pelajaran yang ada di database
-    kolom_mapel_ada = [c for c in mapel_terpilih if c in df_rekap.columns]
-    
-    # Tampilkan tabel dengan styling
-    st.dataframe(
-        df_rekap.style.applymap(style_kkm, subset=kolom_mapel_ada), 
-        use_container_width=True
-    )
+    # Tampilkan tabel biasa (Tanpa styling warna yang bikin error)
+    st.dataframe(df_rekap, use_container_width=True)
     
     # Tombol Download
     csv = df_rekap.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📩 Download Rekap Nilai (.CSV)",
         data=csv,
-        file_name=f"Rekap_Nilai_{nama_sekolah.replace(' ', '_')}.csv",
+        file_name=f"Rekap_Nilai_SDN_Duwet_2.csv",
         mime="text/csv"
     )
