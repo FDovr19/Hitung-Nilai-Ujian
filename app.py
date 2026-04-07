@@ -170,17 +170,33 @@ if st.session_state.database_nilai:
         if last_siswa['Rata-rata'] > (df_rekap['Rata-rata'].mean()):
             st.info("✅ Siswa berada di atas rata-rata kelas.")
 
-    # --- TABEL REKAP DENGAN COLOR CODING ---
+    # --- TABEL REKAP DENGAN COLOR CODING (VERSI FIX) ---
     st.write("---")
     st.subheader("📋 Rekapitulasi Kolektif")
     
+    # Fungsi warna yang lebih aman (Hanya untuk angka)
     def style_kkm(val):
-        if isinstance(val, (int, float)):
-            color = 'red' if val < kkm else 'black'
-            return f'color: {color}'
+        try:
+            if isinstance(val, (int, float, np.integer, np.floating)):
+                return 'color: red' if val < kkm else 'color: black'
+        except:
+            pass
         return ''
 
-    st.dataframe(df_rekap.style.applymap(style_kkm, subset=mapel_terpilih), use_container_width=True)
+    # Pastikan hanya mewarnai kolom Mata Pelajaran yang ada di database
+    kolom_mapel_ada = [c for c in mapel_terpilih if c in df_rekap.columns]
     
+    # Tampilkan tabel dengan styling
+    st.dataframe(
+        df_rekap.style.applymap(style_kkm, subset=kolom_mapel_ada), 
+        use_container_width=True
+    )
+    
+    # Tombol Download
     csv = df_rekap.to_csv(index=False).encode('utf-8')
-    st.download_button("📩 Download Rekap Nilai (.CSV)", data=csv, file_name=f"Rekap_SDN_Duwet_2.csv", mime="text/csv")
+    st.download_button(
+        label="📩 Download Rekap Nilai (.CSV)",
+        data=csv,
+        file_name=f"Rekap_Nilai_{nama_sekolah.replace(' ', '_')}.csv",
+        mime="text/csv"
+    )
