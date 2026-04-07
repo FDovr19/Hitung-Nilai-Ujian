@@ -168,9 +168,16 @@ if st.session_state.database_nilai:
     
     # Tombol Download
     csv = df_rekap.to_csv(index=False).encode('utf-8')
+    # --- PROSES DOWNLOAD AGAR RAPI DI EXCEL (FIX) ---
+    st.write("---")
+    
+    # 1. Gunakan pemisah titik koma (sep=';') agar Excel Indonesia langsung membagi kolom
+    # 2. Tambahkan encoding 'utf-8-sig' agar Excel tidak bingung membaca formatnya
+    csv_data = df_rekap.to_csv(index=False, sep=';').encode('utf-8-sig')
+    
     st.download_button(
-        label="📩 Download Rekap Nilai (.CSV)",
-        data=csv,
+        label="📩 Download Rekap Nilai untuk Excel (.CSV)",
+        data=csv_data,
         file_name=f"Rekap_Nilai_SDN_Duwet_2.csv",
         mime="text/csv"
     )
