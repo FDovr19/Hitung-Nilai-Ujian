@@ -14,18 +14,14 @@ def dapatkan_statistik_pengunjung():
         ip_addr = st.context.headers.get("X-Forwarded-For", "127.0.0.1").split(',')[0]
     except:
         ip_addr = "127.0.0.1"
-
     if not os.path.exists(file_log):
         with open(file_log, "w") as f: f.write("")
-
     with open(file_log, "r") as f:
         daftar_ip = f.read().splitlines()
-
     if ip_addr not in daftar_ip and ip_addr != "127.0.0.1":
         with open(file_log, "a") as f:
             f.write(ip_addr + "\n")
         daftar_ip.append(ip_addr)
-    
     return len(daftar_ip)
 
 # 2. DATABASE
@@ -36,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER ---
 st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.5 Fix*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.6 Design Update*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -44,20 +40,13 @@ with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
     kkm = st.number_input("Batas Lulus (KKM)", value=75)
-    
     st.divider()
-    
-    # STATISTIK
     total_user = dapatkan_statistik_pengunjung()
     st.subheader("🌐 Statistik Akses")
     st.metric(label="Pengguna Unik", value=f"{total_user} Perangkat")
-    
     st.divider()
-    
-    # KONTAK IG
     st.subheader("📩 Kritik & Saran")
     st.link_button("📸 Instagram @rudi.juvent", "https://www.instagram.com/rudi.juvent")
-    
     st.divider()
     if st.button("🗑️ Reset Semua Data"):
         st.session_state.database_nilai = []
@@ -85,26 +74,40 @@ with st.container(border=True):
         
         nilai_temp = {}
         for m in mapel_terpilih:
-            with st.expander(f"📖 {m}"):
+            with st.expander(f"📖 {m}", expanded=False):
+                # --- BAGIAN PG ---
+                st.markdown("#### 🔵 Pilihan Ganda (PG)")
                 c1, c2, c3 = st.columns(3)
-                # PG
-                t_pg = c1.number_input(f"Total PG ({m})", min_value=1, value=25, key=f"tpg_{m}")
-                b_pg = c1.number_input(f"Benar PG ({m})", min_value=0, max_value=t_pg, key=f"bpg_{m}")
-                p_pg = c1.number_input(f"Poin PG ({m})", value=1, key=f"ppg_{m}")
-                # Isian
-                t_is = c2.number_input(f"Total Isian ({m})", min_value=0, value=10, key=f"tis_{m}")
-                b_is = c2.number_input(f"Benar Isian ({m})", min_value=0, max_value=t_is, key=f"bis_{m}")
-                p_is = c2.number_input(f"Poin Isian ({m})", value=2, key=f"pis_{m}")
-                # Essay
-                t_es = c3.number_input(f"Total Essay ({m})", min_value=0, value=5, key=f"tes_{m}")
-                b_es = c3.number_input(f"Benar Essay ({m})", min_value=0, max_value=t_es, key=f"bes_{m}")
-                p_es = c3.number_input(f"Poin Essay ({m})", value=4, key=f"pes_{m}")
+                t_pg = c1.number_input(f"Total Soal PG ({m})", min_value=1, value=25, key=f"tpg_{m}")
+                b_pg = c2.number_input(f"Benar PG ({m})", min_value=0, max_value=t_pg, key=f"bpg_{m}")
+                p_pg = c3.number_input(f"Poin per PG ({m})", value=1, key=f"ppg_{m}")
                 
+                st.divider() # PEMISAH PG KE ISIAN
+                
+                # --- BAGIAN ISIAN ---
+                st.markdown("#### 🟢 Isian Singkat")
+                c4, c5, c6 = st.columns(3)
+                t_is = c4.number_input(f"Total Isian ({m})", min_value=0, value=10, key=f"tis_{m}")
+                b_is = c5.number_input(f"Benar Isian ({m})", min_value=0, max_value=t_is, key=f"bis_{m}")
+                p_is = c6.number_input(f"Poin per Isian ({m})", value=2, key=f"pis_{m}")
+                
+                st.divider() # PEMISAH ISIAN KE ESSAY
+                
+                # --- BAGIAN ESSAY ---
+                st.markdown("#### 🟠 Essay / Uraian")
+                c7, c8, c9 = st.columns(3)
+                t_es = c7.number_input(f"Total Essay ({m})", min_value=0, value=5, key=f"tes_{m}")
+                b_es = c8.number_input(f"Total Skor Benar ({m})", min_value=0, max_value=100, key=f"bes_{m}")
+                p_es = c9.number_input(f"Poin ({m})", value=1, key=f"pes_{m}", help="Isi 1 jika kolom 'Total Skor Benar' adalah nilai jadi.")
+                
+                st.write("---")
+                
+                # KALKULASI
                 s_max = (t_pg * p_pg) + (t_is * p_is) + (t_es * p_es)
                 s_per = (b_pg * p_pg) + (b_is * p_is) + (b_es * p_es)
                 res = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
                 nilai_temp[m] = res
-                st.caption(f"Nilai Akhir {m}: **{res}**")
+                st.markdown(f"**✅ Nilai Akhir {m}: {res}**")
 
         if st.button("➕ Simpan Data", type="primary"):
             if not nama_input:
