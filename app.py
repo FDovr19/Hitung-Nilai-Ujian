@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 import os
@@ -8,7 +7,7 @@ import os
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Sistem Nilai SDN Duwet 2", layout="wide")
 
-# --- FUNGSI TRACKER PENGGUNA UNIK ---
+# --- FUNGSI TRACKER PENGGUNA ---
 def dapatkan_statistik_pengunjung():
     file_log = "pengunjung_unik.txt"
     try:
@@ -29,7 +28,7 @@ def dapatkan_statistik_pengunjung():
     
     return len(daftar_ip)
 
-# 2. DATABASE & SESSION STATE
+# 2. DATABASE
 BANK_MAPEL = ["Agama", "Pancasila", "B. Indonesia", "Matematika", "IPAS", "Seni Budaya", "PJOK", "B. Inggris", "Mulok", "Prakarya"]
 
 if 'database_nilai' not in st.session_state:
@@ -37,10 +36,10 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER ---
 st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.5 2026*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.5 Fix*")
 st.write("---")
 
-# --- SIDEBAR & KONTAK ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
@@ -48,16 +47,15 @@ with st.sidebar:
     
     st.divider()
     
-    # STATISTIK AKSES
+    # STATISTIK
     total_user = dapatkan_statistik_pengunjung()
     st.subheader("🌐 Statistik Akses")
     st.metric(label="Pengguna Unik", value=f"{total_user} Perangkat")
     
     st.divider()
     
-    # KONTAK INSTAGRAM @rudi.juvent
+    # KONTAK IG
     st.subheader("📩 Kritik & Saran")
-    st.info("Punya masukan atau kendala? Hubungi pengembang melalui tombol di bawah:")
     st.link_button("📸 Instagram @rudi.juvent", "https://www.instagram.com/rudi.juvent")
     
     st.divider()
@@ -65,14 +63,10 @@ with st.sidebar:
         st.session_state.database_nilai = []
         st.rerun()
 
-# --- DATA SEKOLAH ---
+# --- INPUT DATA ---
 with st.container(border=True):
-    st.subheader("🏫 Informasi Satuan Pendidikan")
+    st.subheader("🏫 Data Sekolah & Siswa")
     nama_sekolah = st.text_input("Nama Sekolah", value="SDN Duwet 2 Wates Kediri")
-
-# --- FORM INPUT SISWA ---
-with st.container(border=True):
-    st.subheader("📝 Input Data Siswa Baru")
     c_nama, c_kelas = st.columns([3, 1])
     with c_nama:
         nama_input = st.text_input("Nama Lengkap Siswa")
@@ -81,91 +75,77 @@ with st.container(border=True):
 
     if mapel_terpilih:
         st.write("---")
-        # PETUNJUK PENGISIAN & TIPS
-        with st.expander("💡 PETUNJUK PENGISIAN & TIPS (Wajib Baca)", expanded=False):
+        with st.expander("💡 PETUNJUK PENGISIAN & TIPS", expanded=False):
             st.markdown("""
-            **Cara Mengisi Skor:**
-            1.  **Total Soal:** Jumlah soal di naskah.
-            2.  **Benar:** Jumlah soal yang dijawab benar oleh siswa.
-            3.  **Poin per Butir:** Bobot nilai (Misal: PG=1, Isian=2, Essay=4).
-            
-            **Tips Penting:**
-            * Gunakan **Titik (.)** untuk angka desimal (Misal: 75.5).
-            * Khusus **Essay**: Jika poin tiap soal berbeda, jumlahkan total poin yang didapat siswa lalu masukkan di kolom 'Benar', dan isi angka '1' di kolom 'Poin'.
-            * **Download CSV** setiap selesai sesi agar data tersimpan di laptop Anda.
+            1. **Total Soal:** Jumlah soal di naskah.
+            2. **Benar:** Jumlah soal yang dijawab benar.
+            3. **Poin:** Bobot nilai (Misal: PG=1, Isian=2, Essay=4).
+            4. Gunakan **Titik (.)** untuk desimal (Contoh: 80.5).
             """)
-        
-        st.info("Masukkan skor tiap mata pelajaran di bawah ini:")
         
         nilai_temp = {}
         for m in mapel_terpilih:
-            with st.expander(f"📖 {m}", expanded=False):
-                col_pg, col_is, col_es = st.columns(3)
-                with col_pg:
-                    st.write("**PG**")
-                    jml_pg = st.number_input(f"Total PG - {m}", min_value=1, value=25, key=f"tpg_{m}")
-                    ben_pg = st.number_input(f"Benar PG - {m}", min_value=0, max_value=jml_pg, key=f"bpg_{m}")
-                    bot_pg = st.number_input(f"Poin/PG - {m}", value=1, key=f"opg_{m}")
-                with col_is:
-                    st.write("**Isian**")
-                    jml_is = st.number_input(f"Total Isian - {m}", min_value=0, value=10, key=f"tis_{m}")
-                    ben_is = st.number_input(f"Benar Isian - {m}", min_value=0, max_value=jml_is, key=f"bis_{m}")
-                    bot_is = st.number_input(f"Poin/Isian - {m}", value=2, key=f"ois_{m}")
-                with col_es:
-                    st.write("**Essay**")
-                    jml_es = st.number_input(f"Total Essay - {m}", min_value=0, value=5, key=f"tes_{m}")
-                    ben_es = st.number_input(f"Benar Essay - {m}", min_value=0, max_value=jml_es, key=f"bes_{m}")
-                    bot_es = st.number_input(f"Poin/Essay - {m}", value=4, key=f"oes_{m}")
+            with st.expander(f"📖 {m}"):
+                c1, c2, c3 = st.columns(3)
+                # PG
+                t_pg = c1.number_input(f"Total PG ({m})", min_value=1, value=25, key=f"tpg_{m}")
+                b_pg = c1.number_input(f"Benar PG ({m})", min_value=0, max_value=t_pg, key=f"bpg_{m}")
+                p_pg = c1.number_input(f"Poin PG ({m})", value=1, key=f"ppg_{m}")
+                # Isian
+                t_is = c2.number_input(f"Total Isian ({m})", min_value=0, value=10, key=f"tis_{m}")
+                b_is = c2.number_input(f"Benar Isian ({m})", min_value=0, max_value=t_is, key=f"bis_{m}")
+                p_is = c2.number_input(f"Poin Isian ({m})", value=2, key=f"pis_{m}")
+                # Essay
+                t_es = c3.number_input(f"Total Essay ({m})", min_value=0, value=5, key=f"tes_{m}")
+                b_es = c3.number_input(f"Benar Essay ({m})", min_value=0, max_value=t_es, key=f"bes_{m}")
+                p_es = c3.number_input(f"Poin Essay ({m})", value=4, key=f"pes_{m}")
                 
-                s_max = (jml_pg * bot_pg) + (jml_is * bot_is) + (jml_es * bot_es)
-                s_per = (ben_pg * bot_pg) + (ben_is * bot_is) + (ben_es * bot_es)
-                nilai_akhir = (s_per / s_max) * 100 if s_max > 0 else 0
-                nilai_temp[m] = round(nilai_akhir, 2)
-                st.caption(f"Skor: {s_per}/{s_max} | Nilai: **{nilai_temp[m]}**")
+                s_max = (t_pg * p_pg) + (t_is * p_is) + (t_es * p_es)
+                s_per = (b_pg * p_pg) + (b_is * p_is) + (b_es * p_es)
+                res = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
+                nilai_temp[m] = res
+                st.caption(f"Nilai Akhir {m}: **{res}**")
 
-        if st.button("➕ Simpan & Analisis Radar", type="primary"):
+        if st.button("➕ Simpan Data", type="primary"):
             if not nama_input:
-                st.error("Nama siswa tidak boleh kosong!")
+                st.error("Nama siswa wajib diisi!")
             else:
-                data_siswa = {"Sekolah": nama_sekolah, "Nama": nama_input, "Kelas": kelas_input}
-                data_siswa.update(nilai_temp)
-                data_siswa["Rata-rata"] = round(sum(nilai_temp.values()) / len(nilai_temp), 2)
-                st.session_state.database_nilai.append(data_siswa)
-                st.success(f"Data {nama_input} Berhasil Disimpan!")
+                d_siswa = {"Sekolah": nama_sekolah, "Nama": nama_input, "Kelas": kelas_input}
+                d_siswa.update(nilai_temp)
+                d_siswa["Rata-rata"] = round(sum(nilai_temp.values()) / len(nilai_temp), 2)
+                st.session_state.database_nilai.append(d_siswa)
+                st.success(f"Data {nama_input} berhasil disimpan!")
 
 # --- VISUALISASI ---
 if st.session_state.database_nilai:
     st.divider()
-    df_rekap = pd.DataFrame(st.session_state.database_nilai)
-    last_siswa = st.session_state.database_nilai[-1]
+    df = pd.DataFrame(st.session_state.database_nilai)
+    last = st.session_state.database_nilai[-1]
     
-    col_chart, col_stat = st.columns([2, 1])
-    with col_chart:
-        st.subheader(f"📊 Radar Kompetensi: {last_siswa['Nama']}")
-        categories = [m for m in mapel_terpilih if m in last_siswa]
-        values = [last_siswa[m] for m in categories]
-        if categories:
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.subheader(f"📊 Radar: {last['Nama']}")
+        cats = [m for m in mapel_terpilih if m in last]
+        vals = [last[m] for m in cats]
+        if cats:
             fig = go.Figure()
-            fig.add_trace(go.Scatterpolar(r=values + [values[0]], theta=categories + [categories[0]], fill='toself', name=last_siswa['Nama'], line=dict(color='#1f77b4', width=3)))
-            fig.add_trace(go.Scatterpolar(r=[kkm]*len(categories) + [kkm], theta=categories + [categories[0]], mode='lines', name='Batas KKM', line=dict(color='red', width=2, dash='dash')))
-            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, height=450)
+            fig.add_trace(go.Scatterpolar(r=vals + [vals[0]], theta=cats + [cats[0]], fill='toself', name='Nilai'))
+            fig.add_trace(go.Scatterpolar(r=[kkm]*len(cats) + [kkm], theta=cats + [cats[0]], mode='lines', name='KKM', line=dict(color='red', dash='dash')))
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=400)
             st.plotly_chart(fig, use_container_width=True)
 
-    with col_stat:
-        st.subheader("📈 Auto-Insight")
-        st.metric("Rata-rata", f"{last_siswa['Rata-rata']}")
-        mapel_values = {m: last_siswa[m] for m in categories}
-        if mapel_values:
-            top_m = max(mapel_values, key=mapel_values.get)
-            low_m = min(mapel_values, key=mapel_values.get)
-            st.success(f"🌟 **Kekuatan:** {top_m}")
-            if mapel_values[low_m] < kkm:
-                st.error(f"⚠️ **Remedial:** {low_m}")
-            else:
-                st.warning(f"📘 **Saran:** Tingkatkan {low_m}")
+    with col2:
+        st.subheader("📈 Insight")
+        st.metric("Rata-rata", f"{last['Rata-rata']}")
+        m_vals = {m: last[m] for m in cats}
+        if m_vals:
+            t_m = max(m_vals, key=m_vals.get)
+            l_m = min(m_vals, key=m_vals.get)
+            st.success(f"🌟 Kekuatan: {t_m}")
+            if m_vals[l_m] < kkm: st.error(f"⚠️ Remedial: {l_m}")
 
     st.write("---")
-    st.subheader("📋 Rekapitulasi Kolektif")
-    st.dataframe(df_rekap, use_container_width=True)
-    csv_data = df_rekap.to_csv(index=False, sep=';').encode('utf-8-sig')
-    st.download_button(label="📩 Download Rekap untuk Excel (.CSV)", data=csv_data, file_name=f"Rekap_Nilai.csv",
+    st.subheader("📋 Tabel Rekap")
+    st.dataframe(df, use_container_width=True)
+    csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
+    st.download_button("📩 Download Excel (.CSV)", data=csv, file_name="Rekap_Nilai.csv")
