@@ -32,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.9.1 Fix Syntax*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.2 Accumulative Update*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -98,28 +98,70 @@ with st.container(border=True):
                 
                 st.divider() 
                 
-                # --- BAGIAN ESSAY (DYNAMIC TABLE) ---
+                # --- BAGIAN ESSAY (ACCUMULATIVE MODE) ---
                 st.markdown("#### 🟠 Essay / Uraian")
-                st.caption("Gunakan tabel di bawah untuk input nilai essay per nomor.")
                 
-                # Inisialisasi DataFrame awal
-                df_awal = pd.DataFrame([{"Nomor": "1", "Skor": 0.0}])
+                c7, c8, c9 = st.columns(3)
+                t_es = c7.number_input(f"Total Essay ({m})", min_value=0, value=5, key=f"tes_{m}")
+                b_es = c8.number_input(f"Skor Benar Essay ({m})", min_value=0, max_value=100, key=f"bes_{m}")
+                p_es = c9.number_input(f"Poin/Essay ({m})", value=4, key=f"pes_{m}")
                 
-                # Editor Tabel
-                edited_df = st.data_editor(
-                    df_awal,
-                    num_rows="dynamic",
-                    key=f"editor_{m}",
-                    use_container_width=True,
-                    column_config={
-                        "Skor": st.column_config.NumberColumn("Nilai (0-100)", min_value=0, max_value=100, step=0.5)
-                    }
-                )
-                
-                # Kalkulasi Skor Essay
-                total_skor_essay = edited_df["Skor"].sum()
-                jumlah_soal_essay = len(edited_df)
+                # Kotak Tambahan Manual (Akumulatif)
+                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=0.0, key=f"add_{m}", help="Angka ini akan ditambahkan ke total skor akhir bagian ini.")
                 
                 st.write("---")
                 
-                # LOGIKA NILAI AKHIR (CONTO
+                # LOGIKA KALKULASI AKUMULATIF
+                # Total Skor Maksimal tetap dihitung dari parameter utama
+                s_max = (t_pg * p_pg) + (t_is * p_is) + (t_es * p_es)
+                
+                # Skor yang didapat dijumlahkan dengan bonus manual
+                s_per = (b_pg * p_pg) + (b_is * p_is) + (b_es * p_es) + bonus_essay
+                
+                # Menghindari hasil lebih dari 100 jika diinginkan (opsional)
+                res = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
+                if res > 100: res = 100.0
+                
+                nilai_temp[m] = res
+                st.markdown(f"**✅ Nilai Akhir {m}: {res}**")
+
+        if st.button("➕ Simpan Data Siswa", type="primary"):
+            if not nama_input:
+                st.error("Nama siswa wajib diisi!")
+            else:
+                d_siswa = {"Sekolah": nama_sekolah, "Nama": nama_input, "Kelas": kelas_input}
+                d_siswa.update(nilai_temp)
+                d_siswa["Rata-rata"] = round(sum(nilai_temp.values()) / len(nilai_temp), 2)
+                st.session_state.database_nilai.append(d_siswa)
+                st.success(f"Data {nama_input} berhasil disimpan!")
+
+# --- VISUALISASI ---
+if st.session_state.database_nilai:
+    st.divider()
+    df = pd.DataFrame(st.session_state.database_nilai)
+    last = st.session_state.database_nilai[-1]
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.subheader(f"📊 Radar: {last['Nama']}")
+        cats = [m for m in mapel_terpilih if m in last]
+        vals = [last[m] for m in cats]
+        if cats:
+            fig = go.Figure()
+            fig.add_trace(go.Scatterpolar(r=vals + [vals[0]], theta=cats + [cats[0]], fill='toself', name='Nilai'))
+            fig.add_trace(go.Scatterpolar(r=[kkm]*len(cats) + [kkm], theta=cats + [cats[0]], mode='lines', name='KKM', line=dict(color='red', dash='dash')))
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=400)
+            st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        st.subheader("📈 Insight")
+        st.metric("Rata-rata", f"{last['Rata-rata']}")
+        if nilai_temp:
+            t_m = max(nilai_temp, key=nilai_temp.get)
+            st.success(f"🌟 Kekuatan: {t_m}")
+
+    st.write("---")
+    st.subheader("📋 Tabel Rekap")
+    st.dataframe(df, use_container_width=True)
+    csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
+    st.download_button("📩 Download Excel (.CSV)", data=csv, file_name="Rekap_Nilai.csv")
