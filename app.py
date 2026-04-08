@@ -32,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.7 Branding Update*")
+st.markdown("*Developed by **Rudi Setiawan/FDovr19** | v1.7 Branding Update*")
 st.write("---")
 
 # --- SIDEBAR ---
