@@ -54,7 +54,7 @@ with st.sidebar:
     st.subheader("👨‍💻 Profil Pengembang")
     with st.container(border=True):
         st.markdown(f"""
-        **Developer:** Rudi Setiawan, S. Kom.   
+        **Developer:** Rudi Setiawan, S.Kom.   
         **Nickname:** FDovr19  
         **Lembaga:** SDN Duwet 2 Wates-Kediri  
         **Jabatan:** Operator  
