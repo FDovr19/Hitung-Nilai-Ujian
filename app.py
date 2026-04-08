@@ -3,9 +3,38 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+import os
 
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Sistem Nilai SDN Duwet 2", layout="wide")
+
+# --- FUNGSI TRACKER PENGGUNA UNIK (REAL-TIME) ---
+def dapatkan_statistik_pengunjung():
+    file_log = "pengunjung_unik.txt"
+    
+    # Ambil IP Pengunjung dari Header Streamlit Cloud
+    try:
+        # X-Forwarded-For adalah standar untuk mendapatkan IP asli di cloud
+        ip_addr = st.context.headers.get("X-Forwarded-For", "127.0.0.1").split(',')[0]
+    except:
+        ip_addr = "127.0.0.1"
+
+    # Pastikan file log ada
+    if not os.path.exists(file_log):
+        with open(file_log, "w") as f:
+            f.write("")
+
+    # Baca IP yang sudah terdaftar
+    with open(file_log, "r") as f:
+        daftar_ip = f.read().splitlines()
+
+    # Jika IP baru terdeteksi dan bukan localhost, simpan!
+    if ip_addr not in daftar_ip and ip_addr != "127.0.0.1":
+        with open(file_log, "a") as f:
+            f.write(ip_addr + "\n")
+        daftar_ip.append(ip_addr)
+    
+    return len(daftar_ip)
 
 # 2. DATABASE & SESSION STATE
 BANK_MAPEL = [
@@ -18,26 +47,28 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER & KREDIT ---
 st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.2 2026*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.3 2026*")
 st.write("---")
 
-# --- DATA SEKOLAH ---
-with st.container(border=True):
-    st.subheader("🏫 Informasi Satuan Pendidikan")
-    nama_sekolah = st.text_input("Nama Sekolah", value="SDN Duwet 2 Wates Kediri", key="input_sekolah")
-
-# --- SIDEBAR & PENGATURAN ---
+# --- SIDEBAR & STATISTIK ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
     kkm = st.number_input("Batas Lulus (KKM)", value=75)
     
     st.divider()
+    
+    # TAMPILAN STATISTIK REAL-TIME
+    total_user = dapatkan_statistik_pengunjung()
+    st.subheader("🌐 Statistik Akses")
+    st.metric(label="Pengguna Unik", value=f"{total_user} Perangkat")
+    st.caption("Dihitung berdasarkan alamat IP perangkat yang mengakses link ini.")
+    
+    st.divider()
     if st.button("🗑️ Reset Semua Data"):
         st.session_state.database_nilai = []
         st.rerun()
     
-    st.divider()
     if st.button("ℹ️ Tentang Pengembang"):
         st.dialog("Profil Pengembang")
         st.markdown(f"""
@@ -47,8 +78,13 @@ with st.sidebar:
         **Instansi:** SDN Duwet 2 Wates Kediri
         
         ---
-        **Catatan:** Aplikasi ini dikembangkan secara mandiri untuk membantu digitalisasi rekapitulasi nilai di lingkungan **SDN Duwet 2 Wates Kediri**.
+        **Catatan:** Aplikasi ini dikembangkan secara mandiri untuk membantu digitalisasi rekapitulasi nilai.
         """)
+
+# --- DATA SEKOLAH ---
+with st.container(border=True):
+    st.subheader("🏫 Informasi Satuan Pendidikan")
+    nama_sekolah = st.text_input("Nama Sekolah", value="SDN Duwet 2 Wates Kediri", key="input_sekolah")
 
 # --- FORM INPUT SISWA ---
 with st.container(border=True):
@@ -62,7 +98,6 @@ with st.container(border=True):
     nilai_temp = {}
     if mapel_terpilih:
         st.write("---")
-        st.info("Input skor detail mata pelajaran di bawah:")
         for m in mapel_terpilih:
             with st.expander(f"📖 {m}", expanded=False):
                 col_pg, col_is, col_es = st.columns(3)
@@ -98,86 +133,41 @@ with st.container(border=True):
                 st.session_state.database_nilai.append(data_siswa)
                 st.success(f"Data {nama_input} Berhasil Disimpan!")
 
-            # --- VISUALISASI RADAR & ANALISIS OTOMATIS ---
+# --- VISUALISASI RADAR & ANALISIS ---
 if st.session_state.database_nilai:
     st.divider()
     df_rekap = pd.DataFrame(st.session_state.database_nilai)
     last_siswa = st.session_state.database_nilai[-1]
     
     col_chart, col_stat = st.columns([2, 1])
-    
     with col_chart:
         st.subheader(f"📊 Radar Kompetensi: {last_siswa['Nama']}")
-        # Filter hanya mapel yang ada nilainya di data siswa terakhir
         categories = [m for m in mapel_terpilih if m in last_siswa]
         values = [last_siswa[m] for m in categories]
-        
         if categories:
             fig = go.Figure()
-
-            # 1. Area Nilai Siswa
-            fig.add_trace(go.Scatterpolar(
-                r=values + [values[0]],
-                theta=categories + [categories[0]],
-                fill='toself',
-                name=last_siswa['Nama'],
-                line=dict(color='#1f77b4', width=3),
-                marker=dict(size=8)
-            ))
-
-            # 2. Garis KKM
-            fig.add_trace(go.Scatterpolar(
-                r=[kkm]*len(categories) + [kkm],
-                theta=categories + [categories[0]],
-                mode='lines',
-                name='Batas KKM',
-                line=dict(color='red', width=2, dash='dash')
-            ))
-
-            fig.update_layout(
-                polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-                showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5),
-                height=450
-            )
+            fig.add_trace(go.Scatterpolar(r=values + [values[0]], theta=categories + [categories[0]], fill='toself', name=last_siswa['Nama'], line=dict(color='#1f77b4', width=3)))
+            fig.add_trace(go.Scatterpolar(r=[kkm]*len(categories) + [kkm], theta=categories + [categories[0]], mode='lines', name='Batas KKM', line=dict(color='red', width=2, dash='dash')))
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, height=450)
             st.plotly_chart(fig, use_container_width=True)
 
     with col_stat:
         st.subheader("📈 Auto-Insight")
         st.metric("Rata-rata Individu", f"{last_siswa['Rata-rata']}")
-        
-        # Ambil nilai mapel saja untuk analisis
         mapel_values = {m: last_siswa[m] for m in categories}
         if mapel_values:
             top_mapel = max(mapel_values, key=mapel_values.get)
             low_mapel = min(mapel_values, key=mapel_values.get)
-            
             st.success(f"🌟 **Kekuatan Utama:**\n{top_mapel} ({mapel_values[top_mapel]})")
-            
             if mapel_values[low_mapel] < kkm:
                 st.error(f"⚠️ **Perlu Remedial:**\n{low_mapel} ({mapel_values[low_mapel]})")
             else:
                 st.warning(f"📘 **Saran:**\nTingkatkan {low_mapel} ({mapel_values[low_mapel]})")
 
-    # --- TABEL REKAP (VERSI PALING AMAN) ---
+    # --- TABEL REKAP (VERSI EXCEL FRIENDLY) ---
     st.write("---")
     st.subheader("📋 Rekapitulasi Kolektif")
-    
-    # Tampilkan tabel biasa (Tanpa styling warna yang bikin error)
     st.dataframe(df_rekap, use_container_width=True)
     
-    # Tombol Download
-    csv = df_rekap.to_csv(index=False).encode('utf-8')
-    # --- PROSES DOWNLOAD AGAR RAPI DI EXCEL (FIX) ---
-    st.write("---")
-    
-    # 1. Gunakan pemisah titik koma (sep=';') agar Excel Indonesia langsung membagi kolom
-    # 2. Tambahkan encoding 'utf-8-sig' agar Excel tidak bingung membaca formatnya
     csv_data = df_rekap.to_csv(index=False, sep=';').encode('utf-8-sig')
-    
-    st.download_button(
-        label="📩 Download Rekap Nilai untuk Excel (.CSV)",
-        data=csv_data,
-        file_name=f"Rekap_Nilai_SDN_Duwet_2.csv",
-        mime="text/csv"
-    )
+    st.download_button(label="📩 Download Rekap Nilai untuk Excel (.CSV)", data=csv_data, file_name=f"Rekap_SDN_Duwet_2.csv", mime="text/csv")
