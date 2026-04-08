@@ -8,27 +8,20 @@ import os
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Sistem Nilai SDN Duwet 2", layout="wide")
 
-# --- FUNGSI TRACKER PENGGUNA UNIK (REAL-TIME) ---
+# --- FUNGSI TRACKER PENGGUNA UNIK ---
 def dapatkan_statistik_pengunjung():
     file_log = "pengunjung_unik.txt"
-    
-    # Ambil IP Pengunjung dari Header Streamlit Cloud
     try:
-        # X-Forwarded-For adalah standar untuk mendapatkan IP asli di cloud
         ip_addr = st.context.headers.get("X-Forwarded-For", "127.0.0.1").split(',')[0]
     except:
         ip_addr = "127.0.0.1"
 
-    # Pastikan file log ada
     if not os.path.exists(file_log):
-        with open(file_log, "w") as f:
-            f.write("")
+        with open(file_log, "w") as f: f.write("")
 
-    # Baca IP yang sudah terdaftar
     with open(file_log, "r") as f:
         daftar_ip = f.read().splitlines()
 
-    # Jika IP baru terdeteksi dan bukan localhost, simpan!
     if ip_addr not in daftar_ip and ip_addr != "127.0.0.1":
         with open(file_log, "a") as f:
             f.write(ip_addr + "\n")
@@ -37,20 +30,17 @@ def dapatkan_statistik_pengunjung():
     return len(daftar_ip)
 
 # 2. DATABASE & SESSION STATE
-BANK_MAPEL = [
-    "Agama", "Pancasila", "B. Indonesia", "Matematika", 
-    "IPAS", "Seni Budaya", "PJOK", "B. Inggris", "Mulok", "Prakarya"
-]
+BANK_MAPEL = ["Agama", "Pancasila", "B. Indonesia", "Matematika", "IPAS", "Seni Budaya", "PJOK", "B. Inggris", "Mulok", "Prakarya"]
 
 if 'database_nilai' not in st.session_state:
     st.session_state.database_nilai = []
 
-# --- HEADER & KREDIT ---
+# --- HEADER ---
 st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.3 2026*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.4 2026*")
 st.write("---")
 
-# --- SIDEBAR & STATISTIK ---
+# --- SIDEBAR & KONTAK ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
@@ -58,63 +48,81 @@ with st.sidebar:
     
     st.divider()
     
-    # TAMPILAN STATISTIK REAL-TIME
+    # STATISTIK AKSES
     total_user = dapatkan_statistik_pengunjung()
     st.subheader("🌐 Statistik Akses")
     st.metric(label="Pengguna Unik", value=f"{total_user} Perangkat")
-    st.caption("Dihitung berdasarkan alamat IP perangkat yang mengakses link ini.")
+    
+    st.divider()
+    
+    # KONTAK INSTAGRAM & KRITIK SARAN
+    st.subheader("📩 Kritik & Saran")
+    st.write("Punya masukan atau menemukan kendala?")
+    # SILAKAN GANTI 'USER_IG_BAPAK' DENGAN USERNAME INSTAGRAM ASLI BAPAK
+    username_ig = "@rudi.juvent" 
+    st.markdown(f"""
+        <a href="https://instagram.com/{username_ig}" target="_blank">
+            <button style="border:none; border-radius:10px; padding:10px; background-color:#E1306C; color:white; cursor:pointer; width:100%;">
+                📸 Hubungi via Instagram
+            </button>
+        </a>
+    """, unsafe_allow_status=True)
     
     st.divider()
     if st.button("🗑️ Reset Semua Data"):
         st.session_state.database_nilai = []
         st.rerun()
-    
-    if st.button("ℹ️ Tentang Pengembang"):
-        st.dialog("Profil Pengembang")
-        st.markdown(f"""
-        ### 👨‍💻 Developer Profile
-        **Nama:** Rudi Setiawan/FDovr  
-        **Jabatan:** Katanya Operator  
-        **Instansi:** SDN Duwet 2 Wates Kediri
-        
-        ---
-        **Catatan:** Aplikasi ini dikembangkan secara mandiri untuk membantu digitalisasi rekapitulasi nilai.
-        """)
 
 # --- DATA SEKOLAH ---
 with st.container(border=True):
     st.subheader("🏫 Informasi Satuan Pendidikan")
-    nama_sekolah = st.text_input("Nama Sekolah", value="SDN Duwet 2 Wates Kediri", key="input_sekolah")
+    nama_sekolah = st.text_input("Nama Sekolah", value="SDN Duwet 2 Wates Kediri")
 
 # --- FORM INPUT SISWA ---
 with st.container(border=True):
     st.subheader("📝 Input Data Siswa Baru")
     c_nama, c_kelas = st.columns([3, 1])
     with c_nama:
-        nama_input = st.text_input("Nama Lengkap Siswa", key="input_nama")
+        nama_input = st.text_input("Nama Lengkap Siswa")
     with c_kelas:
-        kelas_input = st.selectbox("Kelas", ["1", "2", "3", "4", "5", "6"], key="input_kelas")
+        kelas_input = st.selectbox("Kelas", ["1", "2", "3", "4", "5", "6"])
 
-    nilai_temp = {}
     if mapel_terpilih:
         st.write("---")
+        # PETUNJUK PENGISIAN & TIPS
+        with st.expander("💡 PETUNJUK PENGISIAN & TIPS (Wajib Baca)", expanded=False):
+            st.markdown("""
+            **Cara Mengisi Skor:**
+            1.  **Total Soal:** Jumlah soal di naskah.
+            2.  **Benar:** Jumlah soal yang dijawab benar oleh siswa.
+            3.  **Poin per Butir:** Bobot nilai (Misal: PG=1, Isian=2, Essay=4).
+            
+            **Tips dari Sistem:**
+            * Gunakan **Titik (.)** untuk angka desimal (Misal: 75.5).
+            * Jika ada soal Essay dengan poin berbeda-beda, Bapak/Ibu bisa mengisi **Total Poin** yang didapat siswa di kolom 'Benar' dan isi angka '1' di kolom 'Poin'.
+            * **Jangan lupa Download CSV** setelah selesai input agar data tersimpan permanen di laptop Bapak/Ibu.
+            """)
+        
+        st.info("Masukkan skor tiap mata pelajaran di bawah ini:")
+        
+        nilai_temp = {}
         for m in mapel_terpilih:
             with st.expander(f"📖 {m}", expanded=False):
                 col_pg, col_is, col_es = st.columns(3)
                 with col_pg:
-                    st.markdown("**PG**")
+                    st.write("**PG**")
                     jml_pg = st.number_input(f"Total PG - {m}", min_value=1, value=25, key=f"tpg_{m}")
                     ben_pg = st.number_input(f"Benar PG - {m}", min_value=0, max_value=jml_pg, key=f"bpg_{m}")
                     bot_pg = st.number_input(f"Poin/PG - {m}", value=1, key=f"opg_{m}")
                 with col_is:
-                    st.markdown("**Isian**")
+                    st.write("**Isian**")
                     jml_is = st.number_input(f"Total Isian - {m}", min_value=0, value=10, key=f"tis_{m}")
                     ben_is = st.number_input(f"Benar Isian - {m}", min_value=0, max_value=jml_is, key=f"bis_{m}")
                     bot_is = st.number_input(f"Poin/Isian - {m}", value=2, key=f"ois_{m}")
                 with col_es:
-                    st.markdown("**Essay**")
+                    st.write("**Essay**")
                     jml_es = st.number_input(f"Total Essay - {m}", min_value=0, value=5, key=f"tes_{m}")
-                    ben_es = st.number_input(f"Jml Benar Essay - {m}", min_value=0, max_value=jml_es, key=f"bes_{m}")
+                    ben_es = st.number_input(f"Benar Essay - {m}", min_value=0, max_value=jml_es, key=f"bes_{m}")
                     bot_es = st.number_input(f"Poin/Essay - {m}", value=4, key=f"oes_{m}")
                 
                 s_max = (jml_pg * bot_pg) + (jml_is * bot_is) + (jml_es * bot_es)
@@ -133,7 +141,7 @@ with st.container(border=True):
                 st.session_state.database_nilai.append(data_siswa)
                 st.success(f"Data {nama_input} Berhasil Disimpan!")
 
-# --- VISUALISASI RADAR & ANALISIS ---
+# --- VISUALISASI ---
 if st.session_state.database_nilai:
     st.divider()
     df_rekap = pd.DataFrame(st.session_state.database_nilai)
@@ -153,21 +161,19 @@ if st.session_state.database_nilai:
 
     with col_stat:
         st.subheader("📈 Auto-Insight")
-        st.metric("Rata-rata Individu", f"{last_siswa['Rata-rata']}")
+        st.metric("Rata-rata", f"{last_siswa['Rata-rata']}")
         mapel_values = {m: last_siswa[m] for m in categories}
         if mapel_values:
-            top_mapel = max(mapel_values, key=mapel_values.get)
-            low_mapel = min(mapel_values, key=mapel_values.get)
-            st.success(f"🌟 **Kekuatan Utama:**\n{top_mapel} ({mapel_values[top_mapel]})")
-            if mapel_values[low_mapel] < kkm:
-                st.error(f"⚠️ **Perlu Remedial:**\n{low_mapel} ({mapel_values[low_mapel]})")
+            top_m = max(mapel_values, key=mapel_values.get)
+            low_m = min(mapel_values, key=mapel_values.get)
+            st.success(f"🌟 **Kekuatan:** {top_m}")
+            if mapel_values[low_m] < kkm:
+                st.error(f"⚠️ **Remedial:** {low_m}")
             else:
-                st.warning(f"📘 **Saran:**\nTingkatkan {low_mapel} ({mapel_values[low_mapel]})")
+                st.warning(f"📘 **Saran:** Tingkatkan {low_m}")
 
-    # --- TABEL REKAP (VERSI EXCEL FRIENDLY) ---
     st.write("---")
     st.subheader("📋 Rekapitulasi Kolektif")
     st.dataframe(df_rekap, use_container_width=True)
-    
     csv_data = df_rekap.to_csv(index=False, sep=';').encode('utf-8-sig')
-    st.download_button(label="📩 Download Rekap Nilai untuk Excel (.CSV)", data=csv_data, file_name=f"Rekap_SDN_Duwet_2.csv", mime="text/csv")
+    st.download_button(label="📩 Download Rekap untuk Excel (.CSV)", data=csv_data, file_name=f"Rekap_Nilai.csv", mime="text/csv")
