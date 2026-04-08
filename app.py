@@ -32,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8 Profil Terupdate*")
+st.markdown("*Developed by **Rudi Setiawan/FDovr19** | v1.8 Profil Terupdate*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -54,7 +54,7 @@ with st.sidebar:
     st.subheader("👨‍💻 Profil Pengembang")
     with st.container(border=True):
         st.markdown(f"""
-        **Developer:** Rudi Setiawan  
+        **Developer:** Rudi Setiawan, S. Kom. 
         **Nickname:** FDovr19  
         **Lembaga:** SDN Duwet 2 Wates-Kediri  
         **Jabatan:** Operator  
