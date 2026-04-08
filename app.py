@@ -61,7 +61,7 @@ with st.sidebar:
     # SILAKAN GANTI 'USER_IG_BAPAK' DENGAN USERNAME INSTAGRAM ASLI BAPAK
     username_ig = "USER_IG_BAPAK" 
     st.markdown(f"""
-        <a href="https://instagram.com/{rudi.juvent}" target="_blank">
+        <a href="https://instagram.com/rudi.juvent" target="_blank">
             <button style="border:none; border-radius:10px; padding:10px; background-color:#E1306C; color:white; cursor:pointer; width:100%;">
                 📸 Hubungi via Instagram
             </button>
