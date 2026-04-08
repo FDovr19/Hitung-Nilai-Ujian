@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import numpy as np
 import os
 
-# 1. KONFIGURASI HALAMAN - Ganti Judul Tab Browser
+# 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="KALKULATOR NILAI UJIAN", layout="wide")
 
 # --- FUNGSI TRACKER PENGGUNA ---
@@ -32,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed by **Rudi Setiawan/FDovr19** | v1.7 Branding Update*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8 Profil Terupdate*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -40,13 +40,31 @@ with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
     kkm = st.number_input("Batas Lulus (KKM)", value=75)
+    
     st.divider()
+    
+    # STATISTIK
     total_user = dapatkan_statistik_pengunjung()
     st.subheader("🌐 Statistik Akses")
     st.metric(label="Pengguna Unik", value=f"{total_user} Perangkat")
+    
     st.divider()
+    
+    # PROFIL DEVELOPER
+    st.subheader("👨‍💻 Profil Pengembang")
+    with st.container(border=True):
+        st.markdown(f"""
+        **Developer:** Rudi Setiawan  
+        **Nickname:** FDovr19  
+        **Lembaga:** SDN Duwet 2 Wates-Kediri  
+        **Jabatan:** Operator  
+        **Domisili:** Duwet, Wates-Kediri
+        """)
+    
+    # KONTAK & SARAN
     st.subheader("📩 Kritik & Saran")
     st.link_button("📸 Instagram @rudi.juvent", "https://www.instagram.com/rudi.juvent")
+    
     st.divider()
     if st.button("🗑️ Reset Semua Data"):
         st.session_state.database_nilai = []
@@ -139,7 +157,7 @@ if st.session_state.database_nilai:
 
     with col2:
         st.subheader("📈 Insight")
-        st.metric("Rata-rata", f"{last['Rata-rata']}")
+        st.metric("Rata-rata Individu", f"{last['Rata-rata']}")
         m_vals = {m: last[m] for m in cats}
         if m_vals:
             t_m = max(m_vals, key=m_vals.get)
