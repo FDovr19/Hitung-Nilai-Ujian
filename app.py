@@ -37,7 +37,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER ---
 st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.4 2026*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.5 2026*")
 st.write("---")
 
 # --- SIDEBAR & KONTAK ---
@@ -55,18 +55,10 @@ with st.sidebar:
     
     st.divider()
     
-    # KONTAK INSTAGRAM & KRITIK SARAN
+    # KONTAK INSTAGRAM @rudi.juvent
     st.subheader("📩 Kritik & Saran")
-    st.write("Punya masukan atau menemukan kendala?")
-    # SILAKAN GANTI 'USER_IG_BAPAK' DENGAN USERNAME INSTAGRAM ASLI BAPAK
-    username_ig = "USER_IG_BAPAK" 
-    st.markdown(f"""
-        <a href="https://instagram.com/rudi.juvent" target="_blank">
-            <button style="border:none; border-radius:10px; padding:10px; background-color:#E1306C; color:white; cursor:pointer; width:100%;">
-                📸 Hubungi via Instagram
-            </button>
-        </a>
-    """, unsafe_allow_status=True)
+    st.info("Punya masukan atau kendala? Hubungi pengembang melalui tombol di bawah:")
+    st.link_button("📸 Instagram @rudi.juvent", "https://www.instagram.com/rudi.juvent")
     
     st.divider()
     if st.button("🗑️ Reset Semua Data"):
@@ -97,10 +89,10 @@ with st.container(border=True):
             2.  **Benar:** Jumlah soal yang dijawab benar oleh siswa.
             3.  **Poin per Butir:** Bobot nilai (Misal: PG=1, Isian=2, Essay=4).
             
-            **Tips dari Sistem:**
+            **Tips Penting:**
             * Gunakan **Titik (.)** untuk angka desimal (Misal: 75.5).
-            * Jika ada soal Essay dengan poin berbeda-beda, Bapak/Ibu bisa mengisi **Total Poin** yang didapat siswa di kolom 'Benar' dan isi angka '1' di kolom 'Poin'.
-            * **Jangan lupa Download CSV** setelah selesai input agar data tersimpan permanen di laptop Bapak/Ibu.
+            * Khusus **Essay**: Jika poin tiap soal berbeda, jumlahkan total poin yang didapat siswa lalu masukkan di kolom 'Benar', dan isi angka '1' di kolom 'Poin'.
+            * **Download CSV** setiap selesai sesi agar data tersimpan di laptop Anda.
             """)
         
         st.info("Masukkan skor tiap mata pelajaran di bawah ini:")
@@ -176,4 +168,4 @@ if st.session_state.database_nilai:
     st.subheader("📋 Rekapitulasi Kolektif")
     st.dataframe(df_rekap, use_container_width=True)
     csv_data = df_rekap.to_csv(index=False, sep=';').encode('utf-8-sig')
-    st.download_button(label="📩 Download Rekap untuk Excel (.CSV)", data=csv_data, file_name=f"Rekap_Nilai.csv", mime="text/csv")
+    st.download_button(label="📩 Download Rekap untuk Excel (.CSV)", data=csv_data, file_name=f"Rekap_Nilai.csv",
