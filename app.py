@@ -4,8 +4,8 @@ import plotly.graph_objects as go
 import numpy as np
 import os
 
-# 1. KONFIGURASI HALAMAN
-st.set_page_config(page_title="Sistem Nilai SDN Duwet 2", layout="wide")
+# 1. KONFIGURASI HALAMAN - Ganti Judul Tab Browser
+st.set_page_config(page_title="KALKULATOR NILAI UJIAN", layout="wide")
 
 # --- FUNGSI TRACKER PENGGUNA ---
 def dapatkan_statistik_pengunjung():
@@ -30,9 +30,9 @@ BANK_MAPEL = ["Agama", "Pancasila", "B. Indonesia", "Matematika", "IPAS", "Seni 
 if 'database_nilai' not in st.session_state:
     st.session_state.database_nilai = []
 
-# --- HEADER ---
-st.title("🎓 Sistem Nilai Dashboard Pro")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.6 Design Update*")
+# --- HEADER UTAMA ---
+st.title("🧮 KALKULATOR NILAI UJIAN")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr** | v1.7 Branding Update*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -82,7 +82,7 @@ with st.container(border=True):
                 b_pg = c2.number_input(f"Benar PG ({m})", min_value=0, max_value=t_pg, key=f"bpg_{m}")
                 p_pg = c3.number_input(f"Poin per PG ({m})", value=1, key=f"ppg_{m}")
                 
-                st.divider() # PEMISAH PG KE ISIAN
+                st.divider() 
                 
                 # --- BAGIAN ISIAN ---
                 st.markdown("#### 🟢 Isian Singkat")
@@ -91,14 +91,14 @@ with st.container(border=True):
                 b_is = c5.number_input(f"Benar Isian ({m})", min_value=0, max_value=t_is, key=f"bis_{m}")
                 p_is = c6.number_input(f"Poin per Isian ({m})", value=2, key=f"pis_{m}")
                 
-                st.divider() # PEMISAH ISIAN KE ESSAY
+                st.divider() 
                 
                 # --- BAGIAN ESSAY ---
                 st.markdown("#### 🟠 Essay / Uraian")
                 c7, c8, c9 = st.columns(3)
                 t_es = c7.number_input(f"Total Essay ({m})", min_value=0, value=5, key=f"tes_{m}")
                 b_es = c8.number_input(f"Total Skor Benar ({m})", min_value=0, max_value=100, key=f"bes_{m}")
-                p_es = c9.number_input(f"Poin ({m})", value=1, key=f"pes_{m}", help="Isi 1 jika kolom 'Total Skor Benar' adalah nilai jadi.")
+                p_es = c9.number_input(f"Poin ({m})", value=1, key=f"pes_{m}")
                 
                 st.write("---")
                 
