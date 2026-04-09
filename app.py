@@ -102,7 +102,7 @@ with st.container(border=True):
                 b_es = c8.number_input(f"Skor Benar Essay ({m})", min_value=0, max_value=100, key=f"bes_{m}")
                 p_es = c9.number_input(f"Poin/Essay ({m})", value=4, key=f"pes_{m}")
                 
-                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=100.0, step=1.0, key=f"add_{m}")
+                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=0.0, step=1.0, key=f"add_{m}")
                 
                 st.write("---")
                 
