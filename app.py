@@ -32,14 +32,15 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.4 Precision Update*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.5 Scale 6.0 Update*")
 st.write("---")
 
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
-    kkm = st.number_input("Batas Lulus (KKM)", value=75)
+    # Batas KKM juga disesuaikan ke skala 10 agar sinkron dengan input guru
+    kkm = st.number_input("Batas Lulus (KKM)", value=7.5, step=0.1)
     
     st.divider()
     total_user = dapatkan_statistik_pengunjung()
@@ -108,11 +109,16 @@ with st.container(border=True):
                 
                 s_max = (t_pg * p_pg) + (t_is * p_is) + (t_es * p_es)
                 s_per = (b_pg * p_pg) + (b_is * p_is) + (b_es * p_es) + bonus_essay
-                res = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
-                if res > 100: res = 100.0
                 
-                nilai_temp[m] = res
-                st.markdown(f"**✅ Nilai Akhir {m}: {res}**")
+                # Menghasilkan nilai skala 100 (misal 85.0)
+                res_100 = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
+                if res_100 > 100: res_100 = 100.0
+                
+                # Mengonversi ke skala 10 untuk database (misal 8.5)
+                res_10 = round(res_100 / 10, 2)
+                
+                nilai_temp[m] = res_10
+                st.markdown(f"**✅ Nilai Akhir {m}: {res_10}**")
 
         if st.button("➕ Simpan Data Siswa", type="primary"):
             if not nama_input:
@@ -128,7 +134,6 @@ with st.container(border=True):
 if st.session_state.database_nilai:
     st.divider()
     df = pd.DataFrame(st.session_state.database_nilai)
-    # Pastikan kolom Rata-rata bertipe float agar filter akurat
     df["Rata-rata"] = pd.to_numeric(df["Rata-rata"])
     
     last = st.session_state.database_nilai[-1]
@@ -141,8 +146,9 @@ if st.session_state.database_nilai:
         if cats:
             fig = go.Figure()
             fig.add_trace(go.Scatterpolar(r=vals + [vals[0]], theta=cats + [cats[0]], fill='toself', name='Nilai'))
+            # Garis KKM juga disesuaikan ke skala 10
             fig.add_trace(go.Scatterpolar(r=[kkm]*len(cats) + [kkm], theta=cats + [cats[0]], mode='lines', name='KKM', line=dict(color='red', dash='dash')))
-            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=400)
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10])), height=400)
             st.plotly_chart(fig, use_container_width=True)
 
     with col2:
@@ -154,7 +160,7 @@ if st.session_state.database_nilai:
 
     st.write("---")
     
-    # --- PERBAIKAN LOGIKA PAPAN INFORMASI ---
+    # --- PAPAN INFORMASI DENGAN LIMIT 6.0 ---
     st.subheader("🏆 Papan Informasi Kelas")
     c_top, c_alert = st.columns(2)
     
@@ -166,15 +172,15 @@ if st.session_state.database_nilai:
             st.write(f"{medali[i] if i < 3 else ''} **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
             
     with c_alert:
-        st.markdown("##### ⚠️ Siswa Butuh Perhatian (Rata-rata < 60)")
-        # FILTER KETAT: Hanya yang benar-benar di bawah 60
-        butuh_perhatian = df[df["Rata-rata"] < 60.0].sort_values(by="Rata-rata")
+        st.markdown("##### ⚠️ Siswa Butuh Perhatian (Rata-rata < 6.0)")
+        # FILTER KETAT: Di bawah 6.0
+        butuh_perhatian = df[df["Rata-rata"] < 6.0].sort_values(by="Rata-rata")
         
         if not butuh_perhatian.empty:
             for idx, row in butuh_perhatian.iterrows():
                 st.warning(f"❗ **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
         else:
-            st.info("✅ Semua siswa memiliki rata-rata di atas 60. Kerja bagus!")
+            st.info("✅ Semua siswa memiliki rata-rata di atas 6.0. Mantap!")
 
     st.write("---")
     st.subheader("📋 Tabel Rekap Keseluruhan")
