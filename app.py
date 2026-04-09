@@ -32,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.3 Rank & Alert Update*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.4 Precision Update*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -120,7 +120,7 @@ with st.container(border=True):
             else:
                 d_siswa = {"Sekolah": nama_sekolah, "Nama": nama_input, "Kelas": kelas_input}
                 d_siswa.update(nilai_temp)
-                d_siswa["Rata-rata"] = round(sum(nilai_temp.values()) / len(nilai_temp), 2)
+                d_siswa["Rata-rata"] = float(round(sum(nilai_temp.values()) / len(nilai_temp), 2))
                 st.session_state.database_nilai.append(d_siswa)
                 st.success(f"Data {nama_input} berhasil disimpan!")
 
@@ -128,6 +128,9 @@ with st.container(border=True):
 if st.session_state.database_nilai:
     st.divider()
     df = pd.DataFrame(st.session_state.database_nilai)
+    # Pastikan kolom Rata-rata bertipe float agar filter akurat
+    df["Rata-rata"] = pd.to_numeric(df["Rata-rata"])
+    
     last = st.session_state.database_nilai[-1]
     
     col1, col2 = st.columns([2, 1])
@@ -151,13 +154,12 @@ if st.session_state.database_nilai:
 
     st.write("---")
     
-    # --- BAGIAN BARU: PAPAN PERINGKAT & PERHATIAN ---
+    # --- PERBAIKAN LOGIKA PAPAN INFORMASI ---
     st.subheader("🏆 Papan Informasi Kelas")
     c_top, c_alert = st.columns(2)
     
     with c_top:
         st.markdown("##### 🥇 Top 3 Peringkat Tertinggi")
-        # Mengambil 3 nilai tertinggi
         top_3 = df.sort_values(by="Rata-rata", ascending=False).head(3)
         for i, (idx, row) in enumerate(top_3.iterrows()):
             medali = ["🥇", "🥈", "🥉"]
@@ -165,13 +167,14 @@ if st.session_state.database_nilai:
             
     with c_alert:
         st.markdown("##### ⚠️ Siswa Butuh Perhatian (Rata-rata < 60)")
-        # Memfilter siswa dengan rata-rata di bawah 60
-        butuh_perhatian = df[df["Rata-rata"] < 60]
+        # FILTER KETAT: Hanya yang benar-benar di bawah 60
+        butuh_perhatian = df[df["Rata-rata"] < 60.0].sort_values(by="Rata-rata")
+        
         if not butuh_perhatian.empty:
-            for i, (idx, row) in enumerate(butuh_perhatian.iterrows()):
+            for idx, row in butuh_perhatian.iterrows():
                 st.warning(f"❗ **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
         else:
-            st.info("✅ Belum ada siswa di bawah nilai 60. Pertahankan!")
+            st.info("✅ Semua siswa memiliki rata-rata di atas 60. Kerja bagus!")
 
     st.write("---")
     st.subheader("📋 Tabel Rekap Keseluruhan")
