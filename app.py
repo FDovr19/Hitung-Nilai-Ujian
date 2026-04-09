@@ -32,15 +32,14 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.5 Scale 6.0 Update*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.6 Final Precision*")
 st.write("---")
 
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     mapel_terpilih = st.multiselect("Pilih Mata Pelajaran:", options=BANK_MAPEL, default=BANK_MAPEL)
-    # Batas KKM juga disesuaikan ke skala 10 agar sinkron dengan input guru
-    kkm = st.number_input("Batas Lulus (KKM)", value=7.5, step=0.1)
+    kkm = st.number_input("Batas Lulus (KKM)", value=75, step=1)
     
     st.divider()
     total_user = dapatkan_statistik_pengunjung()
@@ -103,22 +102,19 @@ with st.container(border=True):
                 b_es = c8.number_input(f"Skor Benar Essay ({m})", min_value=0, max_value=100, key=f"bes_{m}")
                 p_es = c9.number_input(f"Poin/Essay ({m})", value=4, key=f"pes_{m}")
                 
-                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=0.0, key=f"add_{m}")
+                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=100.0, step=1.0, key=f"add_{m}")
                 
                 st.write("---")
                 
                 s_max = (t_pg * p_pg) + (t_is * p_is) + (t_es * p_es)
                 s_per = (b_pg * p_pg) + (b_is * p_is) + (b_es * p_es) + bonus_essay
                 
-                # Menghasilkan nilai skala 100 (misal 85.0)
-                res_100 = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
-                if res_100 > 100: res_100 = 100.0
+                # Nilai Skala 100
+                res = round((s_per / s_max) * 100, 2) if s_max > 0 else 0.0
+                if res > 100: res = 100.0
                 
-                # Mengonversi ke skala 10 untuk database (misal 8.5)
-                res_10 = round(res_100 / 10, 2)
-                
-                nilai_temp[m] = res_10
-                st.markdown(f"**✅ Nilai Akhir {m}: {res_10}**")
+                nilai_temp[m] = res
+                st.markdown(f"**✅ Nilai Akhir {m}: {res}**")
 
         if st.button("➕ Simpan Data Siswa", type="primary"):
             if not nama_input:
@@ -126,7 +122,9 @@ with st.container(border=True):
             else:
                 d_siswa = {"Sekolah": nama_sekolah, "Nama": nama_input, "Kelas": kelas_input}
                 d_siswa.update(nilai_temp)
-                d_siswa["Rata-rata"] = float(round(sum(nilai_temp.values()) / len(nilai_temp), 2))
+                # Simpan rata-rata dengan 2 digit desimal
+                rerata = sum(nilai_temp.values()) / len(nilai_temp)
+                d_siswa["Rata-rata"] = round(rerata, 2)
                 st.session_state.database_nilai.append(d_siswa)
                 st.success(f"Data {nama_input} berhasil disimpan!")
 
@@ -134,7 +132,8 @@ with st.container(border=True):
 if st.session_state.database_nilai:
     st.divider()
     df = pd.DataFrame(st.session_state.database_nilai)
-    df["Rata-rata"] = pd.to_numeric(df["Rata-rata"])
+    # Konversi paksa ke numeric untuk keamanan filter
+    df["Rata-rata"] = pd.to_numeric(df["Rata-rata"], errors='coerce')
     
     last = st.session_state.database_nilai[-1]
     
@@ -146,21 +145,20 @@ if st.session_state.database_nilai:
         if cats:
             fig = go.Figure()
             fig.add_trace(go.Scatterpolar(r=vals + [vals[0]], theta=cats + [cats[0]], fill='toself', name='Nilai'))
-            # Garis KKM juga disesuaikan ke skala 10
             fig.add_trace(go.Scatterpolar(r=[kkm]*len(cats) + [kkm], theta=cats + [cats[0]], mode='lines', name='KKM', line=dict(color='red', dash='dash')))
-            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 10])), height=400)
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=400)
             st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("📈 Insight Terakhir")
-        st.metric("Rata-rata", f"{last['Rata-rata']}")
+        st.metric("Rata-rata", f"{last['Rata-rata']:.2f}")
         if nilai_temp:
             t_m = max(nilai_temp, key=nilai_temp.get)
             st.success(f"🌟 Kekuatan: {t_m}")
 
     st.write("---")
     
-    # --- PAPAN INFORMASI DENGAN LIMIT 6.0 ---
+    # --- PAPAN INFORMASI ---
     st.subheader("🏆 Papan Informasi Kelas")
     c_top, c_alert = st.columns(2)
     
@@ -169,21 +167,23 @@ if st.session_state.database_nilai:
         top_3 = df.sort_values(by="Rata-rata", ascending=False).head(3)
         for i, (idx, row) in enumerate(top_3.iterrows()):
             medali = ["🥇", "🥈", "🥉"]
-            st.write(f"{medali[i] if i < 3 else ''} **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
+            st.write(f"{medali[i] if i < 3 else ''} **{row['Nama']}** (Rata-rata: {row['Rata-rata']:.2f})")
             
     with c_alert:
-        st.markdown("##### ⚠️ Siswa Butuh Perhatian (Rata-rata < 6.0)")
-        # FILTER KETAT: Di bawah 6.0
-        butuh_perhatian = df[df["Rata-rata"] < 6.0].sort_values(by="Rata-rata")
+        st.markdown("##### ⚠️ Siswa Butuh Perhatian (Rata-rata < 60)")
+        # Filter ketat hanya untuk yang di bawah 60.00
+        butuh_perhatian = df[df["Rata-rata"] < 60.0].sort_values(by="Rata-rata")
         
         if not butuh_perhatian.empty:
             for idx, row in butuh_perhatian.iterrows():
-                st.warning(f"❗ **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
+                st.warning(f"❗ **{row['Nama']}** (Rata-rata: {row['Rata-rata']:.2f})")
         else:
-            st.info("✅ Semua siswa memiliki rata-rata di atas 6.0. Mantap!")
+            st.info("✅ Semua siswa memiliki rata-rata di atas 60. Pertahankan!")
 
     st.write("---")
     st.subheader("📋 Tabel Rekap Keseluruhan")
-    st.dataframe(df, use_container_width=True)
+    # Tampilkan tabel dengan format 2 desimal
+    st.dataframe(df.style.format(subset=["Rata-rata"], formatter="{:.2f}"), use_container_width=True)
+    
     csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
     st.download_button("📩 Download Excel (.CSV)", data=csv, file_name="Rekap_Nilai.csv")
