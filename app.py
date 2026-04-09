@@ -32,7 +32,7 @@ if 'database_nilai' not in st.session_state:
 
 # --- HEADER UTAMA ---
 st.title("🧮 KALKULATOR NILAI UJIAN")
-st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.2 Accumulative Update*")
+st.markdown("*Developed with ❤️ by **Rudi Setiawan/FDovr19** | v1.8.3 Rank & Alert Update*")
 st.write("---")
 
 # --- SIDEBAR ---
@@ -80,7 +80,6 @@ with st.container(border=True):
         nilai_temp = {}
         for m in mapel_terpilih:
             with st.expander(f"📖 {m}", expanded=False):
-                # --- BAGIAN PG ---
                 st.markdown("#### 🔵 Pilihan Ganda (PG)")
                 c1, c2, c3 = st.columns(3)
                 t_pg = c1.number_input(f"Total Soal PG ({m})", min_value=1, value=25, key=f"tpg_{m}")
@@ -89,7 +88,6 @@ with st.container(border=True):
                 
                 st.divider() 
                 
-                # --- BAGIAN ISIAN ---
                 st.markdown("#### 🟢 Isian Singkat")
                 c4, c5, c6 = st.columns(3)
                 t_is = c4.number_input(f"Total Isian ({m})", min_value=0, value=10, key=f"tis_{m}")
@@ -98,27 +96,18 @@ with st.container(border=True):
                 
                 st.divider() 
                 
-                # --- BAGIAN ESSAY (ACCUMULATIVE MODE) ---
                 st.markdown("#### 🟠 Essay / Uraian")
-                
                 c7, c8, c9 = st.columns(3)
                 t_es = c7.number_input(f"Total Essay ({m})", min_value=0, value=5, key=f"tes_{m}")
                 b_es = c8.number_input(f"Skor Benar Essay ({m})", min_value=0, max_value=100, key=f"bes_{m}")
                 p_es = c9.number_input(f"Poin/Essay ({m})", value=4, key=f"pes_{m}")
                 
-                # Kotak Tambahan Manual (Akumulatif)
-                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=0.0, key=f"add_{m}", help="Angka ini akan ditambahkan ke total skor akhir bagian ini.")
+                bonus_essay = st.number_input(f"➕ Tambahan Skor Manual ({m})", min_value=0.0, value=0.0, key=f"add_{m}")
                 
                 st.write("---")
                 
-                # LOGIKA KALKULASI AKUMULATIF
-                # Total Skor Maksimal tetap dihitung dari parameter utama
                 s_max = (t_pg * p_pg) + (t_is * p_is) + (t_es * p_es)
-                
-                # Skor yang didapat dijumlahkan dengan bonus manual
                 s_per = (b_pg * p_pg) + (b_is * p_is) + (b_es * p_es) + bonus_essay
-                
-                # Menghindari hasil lebih dari 100 jika diinginkan (opsional)
                 res = round((s_per / s_max) * 100, 2) if s_max > 0 else 0
                 if res > 100: res = 100.0
                 
@@ -135,7 +124,7 @@ with st.container(border=True):
                 st.session_state.database_nilai.append(d_siswa)
                 st.success(f"Data {nama_input} berhasil disimpan!")
 
-# --- VISUALISASI ---
+# --- VISUALISASI & ANALISIS DATA ---
 if st.session_state.database_nilai:
     st.divider()
     df = pd.DataFrame(st.session_state.database_nilai)
@@ -154,14 +143,38 @@ if st.session_state.database_nilai:
             st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        st.subheader("📈 Insight")
+        st.subheader("📈 Insight Terakhir")
         st.metric("Rata-rata", f"{last['Rata-rata']}")
         if nilai_temp:
             t_m = max(nilai_temp, key=nilai_temp.get)
             st.success(f"🌟 Kekuatan: {t_m}")
 
     st.write("---")
-    st.subheader("📋 Tabel Rekap")
+    
+    # --- BAGIAN BARU: PAPAN PERINGKAT & PERHATIAN ---
+    st.subheader("🏆 Papan Informasi Kelas")
+    c_top, c_alert = st.columns(2)
+    
+    with c_top:
+        st.markdown("##### 🥇 Top 3 Peringkat Tertinggi")
+        # Mengambil 3 nilai tertinggi
+        top_3 = df.sort_values(by="Rata-rata", ascending=False).head(3)
+        for i, (idx, row) in enumerate(top_3.iterrows()):
+            medali = ["🥇", "🥈", "🥉"]
+            st.write(f"{medali[i] if i < 3 else ''} **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
+            
+    with c_alert:
+        st.markdown("##### ⚠️ Siswa Butuh Perhatian (Rata-rata < 60)")
+        # Memfilter siswa dengan rata-rata di bawah 60
+        butuh_perhatian = df[df["Rata-rata"] < 60]
+        if not butuh_perhatian.empty:
+            for i, (idx, row) in enumerate(butuh_perhatian.iterrows()):
+                st.warning(f"❗ **{row['Nama']}** (Rata-rata: {row['Rata-rata']})")
+        else:
+            st.info("✅ Belum ada siswa di bawah nilai 60. Pertahankan!")
+
+    st.write("---")
+    st.subheader("📋 Tabel Rekap Keseluruhan")
     st.dataframe(df, use_container_width=True)
     csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
     st.download_button("📩 Download Excel (.CSV)", data=csv, file_name="Rekap_Nilai.csv")
